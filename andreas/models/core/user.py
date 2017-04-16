@@ -2,8 +2,8 @@ from datetime import datetime
 
 from peewee import CharField, DateTimeField, ForeignKeyField, PrimaryKeyField, fn
 
-from andreas.core.server import Server
 from andreas.db.model import Model
+from andreas.models.core.server import Server
 
 
 class User(Model):

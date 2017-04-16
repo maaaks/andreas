@@ -3,17 +3,17 @@ from datetime import datetime
 from peewee import DateTimeField, ForeignKeyField, PrimaryKeyField, TextField, fn
 from playhouse.postgres_ext import BinaryJSONField
 
-from andreas.core.server import Server
 from andreas.db.model import Model
+from andreas.models.core.server import Server
 
 
-class Entry(Model):
+class Message(Model):
     id: int = PrimaryKeyField()
     created: datetime = DateTimeField(default=fn.now)
     modified: datetime = DateTimeField(default=fn.now)
     
     server: Server = ForeignKeyField(Server, on_update='cascade')
-    """Server where the entry originally was published and got its identification."""
+    """Server where the message was originally published and got its identification."""
     
     path: str = TextField()
     """
@@ -25,12 +25,12 @@ class Entry(Model):
     
     meta: str = BinaryJSONField(null=True)
     """
-    Key-value container for any additional data about the entry.
+    Key-value container for any additional data about the message.
     How these values are interpreted depends on implementation.
     """
     
     body: str = TextField()
-    """The main content of the entry."""
+    """The main content of the message."""
     
     @classmethod
     def triggers(cls):

@@ -1,17 +1,13 @@
 from typing import List, Type
 
-from andreas.core.entry import Entry
-from andreas.core.links import Link_EntryToEntry, Link_EntryToUser, Link_UserToEntry
-from andreas.core.server import Server
-from andreas.core.user import User
 from andreas.db.database import db
 from andreas.db.model import Model
+from andreas.models.core.message import Message
+from andreas.models.core.server import Server
+from andreas.models.core.user import User
 
 models: List[Type[Model]] = [
-    Entry,
-    Link_EntryToEntry,
-    Link_EntryToUser,
-    Link_UserToEntry,
+    Message,
     Server,
     User,
 ]
