@@ -2,9 +2,7 @@ from typing import List, Type
 
 from andreas.db.database import db
 from andreas.db.model import Model
-from andreas.models.core.message import Message
-from andreas.models.core.server import Server
-from andreas.models.core.user import User
+from andreas.models.core import Message, Server, User
 
 models: List[Type[Model]] = [
     Message,
