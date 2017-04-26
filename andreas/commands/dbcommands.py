@@ -2,10 +2,10 @@ from typing import List, Type
 
 from andreas.db.database import db
 from andreas.db.model import Model
-from andreas.models.core import Message, Server, User
+from andreas.models.core import Post, Server, User
 
 models: List[Type[Model]] = [
-    Message,
+    Post,
     Server,
     User,
 ]

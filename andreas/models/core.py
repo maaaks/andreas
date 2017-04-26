@@ -24,13 +24,13 @@ class Server(Model):
         }
 
 
-class Message(Model):
+class Post(Model):
     id: int = PrimaryKeyField()
     created: datetime = DateTimeField(default=fn.now)
     modified: datetime = DateTimeField(default=fn.now)
     
     server: Server = ForeignKeyField(Server, on_update='cascade')
-    """Server where the message was originally published and got its identification."""
+    """Server where the post was originally published and got its identification."""
     
     path: str = TextField()
     """
@@ -42,12 +42,12 @@ class Message(Model):
     
     meta: str = BinaryJSONField(null=True)
     """
-    Key-value container for any additional data about the message.
+    Key-value container for any additional data about the post.
     How these values are interpreted depends on implementation.
     """
     
     body: str = TextField()
-    """The main content of the message."""
+    """The main content of the post."""
     
     @classmethod
     def triggers(cls):
