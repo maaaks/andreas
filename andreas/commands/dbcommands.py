@@ -2,9 +2,10 @@ from typing import List, Type
 
 from andreas.db.database import db
 from andreas.db.model import Model
-from andreas.models.core import Post, Server, User
+from andreas.models.core import Event, Post, Server, User
 
 models: List[Type[Model]] = [
+    Event,
     Post,
     Server,
     User,
