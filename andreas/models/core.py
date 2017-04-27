@@ -1,10 +1,10 @@
 from datetime import datetime
+from functools import lru_cache
+from typing import Any, Dict
 
-from lxml import etree
-from peewee import BooleanField, CharField, DateTimeField, ForeignKeyField, PrimaryKeyField, TextField, fn
+from peewee import BooleanField, CharField, Check, DateTimeField, ForeignKeyField, PrimaryKeyField, TextField, fn
 from playhouse.postgres_ext import BinaryJSONField
 
-from andreas.db.fields import XmlField
 from andreas.db.model import Model
 
 
@@ -24,16 +24,26 @@ class Server(Model):
         return {
             'before update': 'new.modified = now(); return new;',
         }
+    
+    @classmethod
+    @lru_cache(1)
+    def local(cls) -> "Server":
+        return cls.get(Server.is_local == True)
 
 
 class Event(Model):
     id: int = PrimaryKeyField()
     received: datetime = DateTimeField(default=fn.now)
     
-    received_from: Server = ForeignKeyField(Server, on_update='cascade')
+    received_from: Server = ForeignKeyField(Server, null=True, on_update='cascade')
     """
     Server that we got this Event from.
     In general, this has nothing to do with which server produced the event originally.
+    """
+    
+    hostname: str = TextField()
+    """
+    Hostname of the server on which the post affected by this event is published.
     """
     
     path: str = TextField()
@@ -42,19 +52,18 @@ class Event(Model):
     This is the same path as in :data:`Post.path`.
     """
     
-    xpath: str = TextField()
+    diff: Dict[str,Any] = BinaryJSONField(constraints=[Check("jsonb_typeof(diff) = 'object'")])
     """
-    Path of the XML element which will be deleted or added/replaced with content from :data:`xml`.
-    """
-    
-    xml: etree.ElementBase = XmlField()
-    """
-    If `NULL`, this means that the element specified by :data:`xpath` should be removed from the post.
-    Else, the element should be added (or replaced) with the content provided here.
+    Changes which should be applied to the post.
     """
 
 
 class Post(Model):
+    class Meta:
+        indexes = (
+            (('server', 'path'), True),
+        )
+    
     id: int = PrimaryKeyField()
     created: datetime = DateTimeField(default=fn.now)
     modified: datetime = DateTimeField(default=fn.now)
@@ -70,14 +79,11 @@ class Post(Model):
     As long as we won't mess with it, it doesn't matter for us how exactly the server's routing is done.
     """
     
-    meta: str = BinaryJSONField(null=True)
+    data: Dict[str,Any] = BinaryJSONField(default={}, constraints=[Check("jsonb_typeof(data) = 'object'")])
     """
-    Key-value container for any additional data about the post.
-    How these values are interpreted depends on implementation.
+    The entire content of the post in JSON format.
+    How some of the values are interpreted may depend on implementation.
     """
-    
-    body: str = TextField()
-    """The main content of the post."""
     
     @classmethod
     def triggers(cls):
