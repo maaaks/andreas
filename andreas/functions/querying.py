@@ -16,6 +16,14 @@ def query_posts(server: Union[Server,int], expression: str) -> Iterable[Post]:
         except Post.DoesNotExist:
             pass
 
+def query_posts_paths(server: Union[Server,int], expression: str) -> Iterable[str]:
+    """
+    Identical to :func:`query_posts_ids()` except returns
+    only :data:`path<andreas.models.core.Post.path>` part of each post.
+    """
+    for post in query_posts(server, expression):
+        yield post.path
+
 def query_post(server: Union[Server,int], expression: str) -> Optional[Post]:
     """
     Searches the given `server` for a single post according to conditions specified in the `expression`.

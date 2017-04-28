@@ -14,6 +14,9 @@ class TestCreatePost(TestCase):
             'body': 'Hello, World!',
             'tags': ['Aaa', 'Bbb', 'Ccc'],
         }
+        cls.event.hashes = {
+            '=/post1': ['sha256', '5c56d4fea85167a48b7f71be87b855bd8dacf0c75ba2457fc9b007ae61be05c9'],
+        }
         cls.event.save()
         process_event(cls.event)
     
@@ -45,6 +48,9 @@ class TestModifyPost(TestCase):
             'title': 'Hello (updated)',
             'subtitle': None,
             'tags': ['Aaa', 'Bbb', 'Ccc'],
+        }
+        event.hashes = {
+            '=/post2': ['sha256', '915002cf719e1c0cfdc1783615217370dda8b3ec445cb4a48701a6384f859cc2'],
         }
         event.save()
         process_event(event)

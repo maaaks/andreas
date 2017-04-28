@@ -46,15 +46,23 @@ class Event(Model):
     Hostname of the server on which the post affected by this event is published.
     """
     
-    path: str = TextField()
+    path: str = TextField(null=True)
     """
     Identification of the post affected by this event.
     This is the same path as in :data:`Post.path`.
     """
     
-    diff: Dict[str,Any] = BinaryJSONField(constraints=[Check("jsonb_typeof(diff) = 'object'")])
+    diff: Dict[str,Any] = BinaryJSONField(default={}, constraints=[Check("jsonb_typeof(diff) = 'object'")])
     """
     Changes which should be applied to the post.
+    """
+    
+    hashes: Dict[str,str] = BinaryJSONField(default={}, constraints=[Check("jsonb_typeof(hashes) = 'object'")])
+    """
+    Actual hashes that the author wants to provide or update.
+    The hashes should be provided as dictionary where each key is an expression
+    and value is a two-element array containing algorithm name
+    and the hash of the post/list specified by that expression.
     """
 
 
