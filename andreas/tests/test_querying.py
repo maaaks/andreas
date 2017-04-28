@@ -1,19 +1,19 @@
-from unittest.case import TestCase
-
 from andreas.functions.querying import query_post, query_posts
 from andreas.models.core import Post, Server
+from andreas.tests.testcase import AndreasTestCase
 
 
-class TestQuerying(TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.server_a: Server = Server.create(hostname='A')
-        Post.create(server=cls.server_a, path='1', data={'body': 'Server A, Post #1'})
-        Post.create(server=cls.server_a, path='2', data={'body': 'Server A, Post #2'})
+class TestQuerying(AndreasTestCase):
+    def setUp(self):
+        super().setUp()
         
-        cls.server_b: Server = Server.create(hostname='B')
-        Post.create(server=cls.server_b, path='1', data={'body': 'Server B, Post #1'})
-        Post.create(server=cls.server_b, path='2', data={'body': 'Server B, Post #2'})
+        self.server_a: Server = Server.create(hostname='A')
+        Post.create(server=self.server_a, path='1', data={'body': 'Server A, Post #1'})
+        Post.create(server=self.server_a, path='2', data={'body': 'Server A, Post #2'})
+        
+        self.server_b: Server = Server.create(hostname='B')
+        Post.create(server=self.server_b, path='1', data={'body': 'Server B, Post #1'})
+        Post.create(server=self.server_b, path='2', data={'body': 'Server B, Post #2'})
     
     def test_existing_posts(self):
         for server in (self.server_a, self.server_b):
