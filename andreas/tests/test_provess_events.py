@@ -33,6 +33,7 @@ class TestModifyPost(TestCase):
         cls.post.path = '/post2'
         cls.post.data = {
             'title': 'Hello',
+            'subtitle': 'A hello world post',
             'body': 'Hello, World!',
         }
         cls.post.save()
@@ -41,8 +42,9 @@ class TestModifyPost(TestCase):
         event.hostname = 'localhost'
         event.path = '/post2'
         event.diff = {
-            'tags': ['Aaa', 'Bbb', 'Ccc'],
             'title': None,
+            'subtitle': 'An updated hello world post',
+            'tags': ['Aaa', 'Bbb', 'Ccc'],
         }
         event.save()
         process_event(event)
@@ -54,6 +56,7 @@ class TestModifyPost(TestCase):
             .get())
         
         expected = {
+            'subtitle': 'An updated hello world post',
             'body': 'Hello, World!',
             'tags': ['Aaa', 'Bbb', 'Ccc'],
         }
