@@ -42,3 +42,13 @@ class Model(peewee.Model):
                 db.execute_sql(
                     f'create trigger {trigger_name} {when} on {cls.table()} '
                     f'for each row execute procedure {cls.table()}_{trigger_name}()')
+    
+    def reload(self):
+        """
+        Updates all the fields from the database.
+        """
+        newer_self = self.get(self._meta.primary_key == self._get_pk_value())
+        for field_name in self._meta.fields.keys():
+            val = getattr(newer_self, field_name)
+            setattr(self, field_name, val)
+        self._dirty.clear()
