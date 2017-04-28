@@ -42,22 +42,23 @@ class TestModifyPost(TestCase):
         event.hostname = 'localhost'
         event.path = '/post2'
         event.diff = {
-            'title': None,
-            'subtitle': 'An updated hello world post',
+            'title': 'Hello (updated)',
+            'subtitle': None,
             'tags': ['Aaa', 'Bbb', 'Ccc'],
         }
         event.save()
         process_event(event)
-    
-    def test_all(self):
-        post: Post = (Post.select()
-            .where(Post.server == Server.local())
-            .where(Post.path == '/post2')
-            .get())
         
-        expected = {
-            'subtitle': 'An updated hello world post',
-            'body': 'Hello, World!',
-            'tags': ['Aaa', 'Bbb', 'Ccc'],
-        }
-        self.assertEqual(expected, post.data)
+        cls.post.reload()
+    
+    def test_title_updated(self):
+        self.assertEqual('Hello (updated)', self.post.data['title'])
+    
+    def test_subtitle_removed(self):
+        self.assertFalse('subtitle' in self.post.data)
+    
+    def test_body_untouched(self):
+        self.assertEqual('Hello, World!', self.post.data['body'])
+    
+    def test_tags_added(self):
+        self.assertEqual(['Aaa', 'Bbb', 'Ccc'], self.post.data['tags'])
