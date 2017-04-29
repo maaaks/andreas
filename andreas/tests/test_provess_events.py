@@ -1,4 +1,5 @@
-from andreas.functions.process_events import process_event
+from andreas.functions.process_events import IncorrectEventHashes, process_event
+from andreas.functions.querying import query_post
 from andreas.models.core import Event, Post, Server
 from andreas.tests.testcase import AndreasTestCase
 
@@ -69,3 +70,25 @@ class TestModifyPost(AndreasTestCase):
     
     def test_tags_added(self):
         self.assertEqual(['Aaa', 'Bbb', 'Ccc'], self.post.data['tags'])
+
+class TestIncorrectHashes(AndreasTestCase):
+    def setUp(self):
+        super().setUp()
+        
+        self.server: Server = Server.create(hostname='A')
+        
+        self.event = Event()
+        self.event.hostname = 'A'
+        self.event.path = '/post1'
+        self.event.diff = {
+            'body': 'This event should be rejected.',
+        }
+        self.event.hashes = {
+            '=/post1': ['sha256', 'b267a9d77b86a57125b2ac6939951582e2a0e24a775fcbac8c26a791f8d6a490'],
+        }
+        self.event.save()
+    
+    def test_all(self):
+        with self.assertRaises(IncorrectEventHashes):
+            process_event(self.event)
+        self.assertIsNone(query_post(self.server, '=/post1'))
