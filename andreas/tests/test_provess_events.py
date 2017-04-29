@@ -34,7 +34,7 @@ class TestModifyPost(AndreasTestCase):
         
         self.post = Post()
         self.post.server = Server.local()
-        self.post.path = '/post2'
+        self.post.path = '/post1'
         self.post.data = {
             'title': 'Hello',
             'subtitle': 'A hello world post',
@@ -44,14 +44,14 @@ class TestModifyPost(AndreasTestCase):
         
         event = Event()
         event.hostname = 'localhost'
-        event.path = '/post2'
+        event.path = '/post1'
         event.diff = {
             'title': 'Hello (updated)',
             'subtitle': None,
             'tags': ['Aaa', 'Bbb', 'Ccc'],
         }
         event.hashes = {
-            '=/post2': ['sha256', '915002cf719e1c0cfdc1783615217370dda8b3ec445cb4a48701a6384f859cc2'],
+            '=/post1': ['sha256', '915002cf719e1c0cfdc1783615217370dda8b3ec445cb4a48701a6384f859cc2'],
         }
         event.save()
         process_event(event)
