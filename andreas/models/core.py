@@ -59,10 +59,9 @@ class Event(Model):
     
     hashes: Dict[str,str] = BinaryJSONField(default={}, constraints=[Check("jsonb_typeof(hashes) = 'object'")])
     """
-    Actual hashes that the author wants to provide or update.
-    The hashes should be provided as dictionary where each key is an expression
-    and value is a two-element array containing algorithm name
-    and the hash of the post/list specified by that expression.
+    Hashes of the entire post after the diff is applied.
+    The hashes should be provided as dictionary
+    where each key is an algorithm name and the hash of the post calculated using that algorithm.
     """
 
 

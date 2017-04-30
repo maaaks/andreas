@@ -1,35 +1,16 @@
-from typing import Iterable, Optional, Union
+from typing import Union
 
 from andreas.models.core import Post, Server
 
 
-def query_posts(server: Union[Server,int], expression: str) -> Iterable[Post]:
+def get_post(server: Union[Server,str,int], path: str) -> Post:
     """
-    Searches the given `server` for posts according to conditions specified in the `expression`.
+    Returns a post with given `path` on given `server`.
     
-    Supported expressions are:
-        - `=/post1` — gets exactly one post, with path `/post1`
+    :param server: The :class:`Server<andreas.models.core.Server>` object, or its id, or its hostname.
+    :param path: The path to the required :class:`Post<andreas.models.core.Post>` on the server.
     """
-    if expression[:1] == '=':
-        try:
-            yield Post.get(Post.server == server, Post.path == expression[1:])
-        except Post.DoesNotExist:
-            pass
-
-def query_posts_paths(server: Union[Server,int], expression: str) -> Iterable[str]:
-    """
-    Identical to :func:`query_posts_ids()` except returns
-    only :data:`path<andreas.models.core.Post.path>` part of each post.
-    """
-    for post in query_posts(server, expression):
-        yield post.path
-
-def query_post(server: Union[Server,int], expression: str) -> Optional[Post]:
-    """
-    Searches the given `server` for a single post according to conditions specified in the `expression`.
-    Accepts only the ``=``-queries.
-    """
-    assert expression[:1] == '='
-    for post in query_posts(server, expression):
-        return post
-    return None
+    if isinstance(server, str):
+        return Post.select(Post, Server).join(Server).where(Server.hostname == server).where(Post.path == path).get()
+    else:
+        return Post.get(Post.server == server, Post.path == path)
