@@ -1,6 +1,8 @@
 from andreas.functions.process_events import IncorrectEventHashes, process_event
 from andreas.functions.querying import get_post
-from andreas.models.core import Event, Post, Server
+from andreas.models.post import Post
+from andreas.models.event import Event
+from andreas.models.server import Server
 from andreas.tests.testcase import AndreasTestCase
 
 

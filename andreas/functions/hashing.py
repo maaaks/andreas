@@ -1,7 +1,7 @@
 import hashlib
 import json
 
-from andreas.models.core import Post
+from andreas.models.post import Post
 
 
 def hash_post(post: Post, algorithm: str) -> bytes:

@@ -2,7 +2,10 @@ from typing import List, Type
 
 from andreas.db.database import db
 from andreas.db.model import Model
-from andreas.models.core import Event, Post, Server, User
+from andreas.models.user import User
+from andreas.models.post import Post
+from andreas.models.event import Event
+from andreas.models.server import Server
 
 models: List[Type[Model]] = [
     Event,

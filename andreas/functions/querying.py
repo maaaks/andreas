@@ -1,6 +1,7 @@
 from typing import Union
 
-from andreas.models.core import Post, Server
+from andreas.models.post import Post
+from andreas.models.server import Server
 
 
 def get_post(server: Union[Server,str,int], path: str) -> Post:

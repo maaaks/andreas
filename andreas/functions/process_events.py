@@ -1,7 +1,9 @@
 from typing import List
 
 from andreas.functions.hashing import hash_post
-from andreas.models.core import Event, Post, Server
+from andreas.models.post import Post
+from andreas.models.event import Event
+from andreas.models.server import Server
 
 
 def process_event(event: Event):

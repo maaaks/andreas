@@ -1,7 +1,8 @@
 from typing import Iterable
 
 from andreas.functions.querying import get_post
-from andreas.models.core import Post, Server
+from andreas.models.post import Post
+from andreas.models.server import Server
 from andreas.tests.testcase import AndreasTestCase
 
 
