@@ -22,3 +22,26 @@ class User(Model):
         return {
             'before update': 'new.modified = now(); return new;',
         }
+    
+    @classmethod
+    def from_string(cls, identificator: str, *, create: bool = False) -> "User":
+        """
+        Given a string formatted like ``hostname/user``, returns the user `user` at the server `hostname`.
+        The first occurence of a slash is the separator.
+        
+        :param identificator: The full identificator of the user.
+        :param create: When `True`, the user and server will be automatically added to database if not exist.
+        """
+        hostname, user = identificator.split('/', maxsplit=1)
+        try:
+            return (User.select(User, Server)
+                .join(Server)
+                .where(Server.hostname == hostname)
+                .where(User.login == user)
+                .get())
+        except User.DoesNotExist as e:
+            if create:
+                server, _ = Server.get_or_create(hostname=hostname)
+                return User.create(server=server, login=user)
+            else:
+                raise e

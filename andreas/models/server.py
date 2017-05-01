@@ -12,6 +12,8 @@ class Server(Model):
     modified: datetime = DateTimeField(default=fn.now)
     
     hostname: str = TextField()
+    """Server's identificator. Can contain any symbols but ``/``."""
+    
     engine_name: str = CharField(50, null=True)
     engine_version: str = CharField(50, null=True)
     
