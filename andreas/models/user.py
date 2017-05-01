@@ -26,13 +26,13 @@ class User(Model):
     @classmethod
     def from_string(cls, identificator: str, *, create: bool = False) -> "User":
         """
-        Given a string formatted like ``server/user``, returns the user `user` at the server `server`.
-        The first occurence of a slash is the separator.
+        Given a string formatted like ``user@server``, returns the user `user` at the server `server`.
+        The last occurence of ``@`` is the separator, so `server` cannot contain this symbol inside, but `user` can.
         
         :param identificator: The full identificator of the user.
         :param create: When `True`, the user and server will be automatically added to database if not exist.
         """
-        server_name, user = identificator.split('/', maxsplit=1)
+        user, server_name = identificator.rsplit('@', maxsplit=1)
         try:
             return (User.select(User, Server)
                 .join(Server)
