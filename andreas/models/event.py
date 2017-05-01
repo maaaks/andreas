@@ -18,9 +18,9 @@ class Event(Model):
     In general, this has nothing to do with which server produced the event originally.
     """
     
-    hostname: str = TextField()
+    server: str = TextField()
     """
-    Hostname of the server on which the post affected by this event is published.
+    Name of the server on which the post affected by this event is published.
     """
     
     path: str = TextField(null=True)

@@ -11,7 +11,7 @@ class TestCreatePost(AndreasTestCase):
         super().setUp()
         
         self.event = Event()
-        self.event.hostname = 'localhost'
+        self.event.server = 'localhost'
         self.event.path = '/post1'
         self.event.diff = {
             'body': 'Hello, World!',
@@ -29,7 +29,7 @@ class TestCreatePost(AndreasTestCase):
     def test_all(self):
         post: Post = (Post.select()
             .join(Server)
-            .where(Server.hostname == 'localhost')
+            .where(Server.name == 'localhost')
             .where(Post.path == '/post1')
             .get())
         self.assertEqual(self.event.diff, post.data)
@@ -49,7 +49,7 @@ class TestModifyPost(AndreasTestCase):
         self.post.save()
         
         event = Event()
-        event.hostname = 'localhost'
+        event.server = 'localhost'
         event.path = '/post1'
         event.diff = {
             'title': 'Hello (updated)',
@@ -83,10 +83,10 @@ class TestIncorrectHashes(AndreasTestCase):
     def setUp(self):
         super().setUp()
         
-        self.server: Server = Server.create(hostname='A')
+        self.server: Server = Server.create(name='A')
         
         self.event = Event()
-        self.event.hostname = 'A'
+        self.event.server = 'A'
         self.event.path = '/post1'
         self.event.diff = {
             'body': 'This event should be rejected.',

@@ -2,10 +2,10 @@ from typing import List, Type
 
 from andreas.db.database import db
 from andreas.db.model import Model
-from andreas.models.user import User
-from andreas.models.post import Post
 from andreas.models.event import Event
+from andreas.models.post import Post
 from andreas.models.server import Server
+from andreas.models.user import User
 
 models: List[Type[Model]] = [
     Event,
@@ -26,7 +26,7 @@ def populatedb():
     if not Server.select().where(Server.is_local).count():
         server = Server()
         server.is_local = True
-        server.hostname = 'localhost'
+        server.name = 'localhost'
         server.engine_name = 'Andreas'
         server.engine_version = '0.0.1'
         server.save()
@@ -35,7 +35,7 @@ def populatedb():
     if not User.select().count():
         user = User()
         user.server = Server.get(Server.is_local)
-        user.login = 'root'
+        user.name = 'root'
         user.save()
 
 @db.atomic()

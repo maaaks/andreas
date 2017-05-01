@@ -7,7 +7,7 @@ from andreas.models.server import Server
 
 
 def process_event(event: Event):
-    server: Server = Server.get(Server.hostname == event.hostname)
+    server: Server = Server.get(Server.name == event.server)
     
     # Create or update the post with data provided in this event
     if event.path:
@@ -18,7 +18,7 @@ def process_event(event: Event):
                 .get())
         except Post.DoesNotExist:
             post = Post()
-            post.server = Server.get(Server.hostname == event.hostname)
+            post.server = Server.get(Server.name == event.server)
             post.path = event.path
         
         # Add/replace elements from the event,
