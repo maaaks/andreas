@@ -19,11 +19,12 @@ class _TestWithKeyPair(AndreasTestCase):
         super().setUp()
         
         self.server: Server = Server.create(name='aaa')
-        self.user: User = User.create(server=self.server, name='user1')
         
-        keypair = KeyPair.from_file(dirname(__file__) + '/resources/keys.txt')
-        keypair.user = self.user
-        keypair.save()
+        self.abraham: User = User.create(server=self.server, name='abraham')
+        KeyPair.from_file(dirname(__file__) + '/keypairs/abraham.txt', user=self.abraham)
+        
+        self.bernard: User = User.create(server=self.server, name='bernard')
+        KeyPair.from_file(dirname(__file__) + '/keypairs/bernard.txt', user=self.bernard)
 
 class TestCreatePost(_TestWithKeyPair):
     def setUp(self):
@@ -31,14 +32,14 @@ class TestCreatePost(_TestWithKeyPair):
         
         self.event = Event()
         self.event.server = 'aaa'
-        self.event.user = 'user1'
+        self.event.user = 'abraham'
         self.event.path = '/post1'
         self.event.diff = {
             'body': 'Hello, World!',
             'tags': ['Aaa', 'Bbb', 'Ccc'],
         }
         self.event.signatures = {
-            'user1@aaa':
+            'abraham@aaa':
                 '1ab07274eddcbebcdd9fa50306e4a75bb6ba99dac7129f23bbdbcc9de5737934'
                 '1ea150bc12f8cf644d0f75ecaf936fb7b8644aa61bbd09630bd08d013e02dde7'
                 '6ff938c7397a5de7859e4467a9c9fa228d291fe35e88a2e3da5878b35e1782e7'
@@ -65,7 +66,7 @@ class TestModifyPost(_TestWithKeyPair):
         
         self.post = Post()
         self.post.server = self.server
-        self.post.user = self.user
+        self.post.user = self.abraham
         self.post.path = '/post1'
         self.post.data = {
             'title': 'Hello',
@@ -76,7 +77,7 @@ class TestModifyPost(_TestWithKeyPair):
         
         event = Event()
         event.server = 'aaa'
-        event.user = 'user1'
+        event.user = 'abraham'
         event.path = '/post1'
         event.diff = {
             'title': 'Hello (updated)',
@@ -84,7 +85,7 @@ class TestModifyPost(_TestWithKeyPair):
             'tags': ['Aaa', 'Bbb', 'Ccc'],
         }
         event.signatures = {
-            'user1@aaa':
+            'abraham@aaa':
                 'aeb3d948a5711c43a59101c8ead56824e489f4497d164f42f5798e44030cc510'
                 'b476571249bf0f244b3dcd199152d3f1b940969c9f96b3cc72a33305cef43bb0'
                 'f47f62bc5538b6d115fb5fb1b13d4129aee055d36f5a3ebadd3e36198f14f012'
@@ -117,13 +118,13 @@ class TestIncorrectSignature(_TestWithKeyPair):
         
         self.event = Event()
         self.event.server = 'aaa'
-        self.event.user = 'user1'
+        self.event.user = 'abraham'
         self.event.path = '/post1'
         self.event.diff = {
             'body': 'This event should be rejected.',
         }
         self.event.signatures = {
-            'user1@aaa':
+            'abraham@aaa':
                 '041958d87fb4c256887ec00d5d6918ea313a60aac67b3a807678c19c95519dfb'
                 'bacc08e62d132f8f9764ca8949330c8f70142e7e7750f2675c73a0884898ca98'
                 '81f3ada5de61735b8075c879d38a2198cc0f5eb64431b79ee3c1e24b0a84339b'

@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Union
 
 import rsa
 from peewee import DateTimeField, ForeignKeyField, PrimaryKeyField, fn
@@ -43,15 +44,24 @@ class KeyPair(Model):
         return KeyPair(n=key.n, e=key.e)
     
     @classmethod
-    def from_file(cls, filename: str) -> "KeyPair":
-        """Loads a file with either a public or private key stored in it."""
+    def from_file(cls, filename: str, *, user: Union[User,int] = None) -> "KeyPair":
+        """
+        Loads a file with either a public or private key stored in it.
+        If a `user` is given, assigns it and saves the keypair immediately, else returns unsaved object.
+        """
         with open(filename) as file:
             try:
                 key = rsa.PrivateKey.load_pkcs1(file.read())
-                return cls.from_privkey(key)
+                keypair = cls.from_privkey(key)
             except ValueError:
                 key = rsa.PublicKey.load_pkcs1(file.read())
-                return cls.from_pubkey(key)
+                keypair = cls.from_pubkey(key)
+        
+        if user:
+            keypair.user = user
+            keypair.save()
+        
+        return keypair
     
     @property
     def keysize(self) -> int:
