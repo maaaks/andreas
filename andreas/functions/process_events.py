@@ -1,9 +1,13 @@
-from typing import List
+from typing import Dict, List
 
-from andreas.functions.hashing import hash_post
-from andreas.models.post import Post
+import rsa
+
+from andreas.functions.verifying import verify_post
 from andreas.models.event import Event
+from andreas.models.post import Post
 from andreas.models.server import Server
+from andreas.models.signature import Signature, UnverifiedSignature
+from andreas.models.user import User
 
 
 def process_event(event: Event):
@@ -29,26 +33,34 @@ def process_event(event: Event):
             else:
                 del post.data[key]
         
-        # Verify hashes
-        if event.hashes:
-            errors = []
-            for algorithm, hash in event.hashes.items():
-                if hash_post(post, algorithm) != bytes.fromhex(hash):
-                    errors.append(algorithm)
-            if errors:
-                raise IncorrectEventHashes(errors)
+        # The event has signatures, right?
+        if not event.signatures:
+            raise NoSignaturesProvided
         
-        # If no errors occured, save the post
+        # Verify signatures
+        # If at least one signature is ok, consider the post verified
+        verified_signatures: List[Dict] = []
+        unverified_signatures: List[Dict] = []
+        for user_string, signature_data in event.signatures.items():
+            user = User.from_string(user_string, create=True)
+            try:
+                keypair = verify_post(post, user, bytes.fromhex(signature_data))
+                verified_signatures.append(dict(post=post, data=signature_data, keypair=keypair))
+            except rsa.VerificationError:
+                unverified_signatures.append(dict(post=post, data=signature_data, user=user))
+        
+        # If we couldn't verify any signature at all, reject the post
+        if not verified_signatures:
+            raise CouldNotVerifySignatures
+        
+        # Else, save the post and all the signatures
         post.save()
+        Signature.insert_many(verified_signatures).execute()
+        if unverified_signatures:
+            UnverifiedSignature.insert_many(unverified_signatures).execute()
 
+class NoSignaturesProvided(Exception):
+    pass
 
-class IncorrectEventHashes(Exception):
-    def __init__(self, algorithms: List[str]):
-        super().__init__()
-        self.algorithms = algorithms
-    
-    def __str__(self):
-        if len(self.algorithms) == 1:
-            return 'Incorrect hash for {}.'.format(self.algorithms[0])
-        else:
-            return 'Incorrect hashes for {}.'.format(', '.join(self.algorithms))
+class CouldNotVerifySignatures(Exception):
+    pass

@@ -3,14 +3,19 @@ from typing import List, Type
 from andreas.db.database import db
 from andreas.db.model import Model
 from andreas.models.event import Event
+from andreas.models.keypair import KeyPair
 from andreas.models.post import Post
 from andreas.models.server import Server
+from andreas.models.signature import Signature, UnverifiedSignature
 from andreas.models.user import User
 
 models: List[Type[Model]] = [
     Event,
+    KeyPair,
     Post,
     Server,
+    Signature,
+    UnverifiedSignature,
     User,
 ]
 

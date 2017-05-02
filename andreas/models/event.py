@@ -23,6 +23,11 @@ class Event(Model):
     Name of the server on which the post affected by this event is published.
     """
     
+    user: str = TextField()
+    """
+    Name of the user who should be the «owner» of the post.
+    """
+    
     path: str = TextField(null=True)
     """
     Identification of the post affected by this event.
@@ -34,9 +39,10 @@ class Event(Model):
     Changes which should be applied to the post.
     """
     
-    hashes: Dict[str,str] = BinaryJSONField(default={}, constraints=[Check("jsonb_typeof(hashes) = 'object'")])
+    signatures: Dict[str,str] = BinaryJSONField(default={}, constraints=[Check("jsonb_typeof(signatures) = 'object'")])
     """
-    Hashes of the entire post after the diff is applied.
-    The hashes should be provided as dictionary
-    where each key is an algorithm name and the hash of the post calculated using that algorithm.
+    RSA signatures of the resulting post after the diff is applied.
+    The event may contain signatures by different users, even from different servers.
+    Each key is full user identification (see :meth:`User::from_string()<andreas.models.user.User.from_string>`),
+    and each value is the sign made by that user.
     """
