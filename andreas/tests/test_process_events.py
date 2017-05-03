@@ -7,6 +7,9 @@ from andreas.tests.andreastestcase import AndreasTestCaseWithKeyPair
 
 
 class TestCreatePost(AndreasTestCaseWithKeyPair):
+    """
+    Create a simple post by a single event.
+    """
     def setUp(self):
         super().setUp()
         
@@ -25,14 +28,14 @@ class TestCreatePost(AndreasTestCaseWithKeyPair):
         process_event(self.event)
     
     def test_all(self):
-        post: Post = (Post.select()
-            .join(Server)
-            .where(Server.name == 'aaa')
-            .where(Post.path == '/post1')
-            .get())
+        post: Post = Post.select().join(Server).where(Server.name == 'aaa', Post.path == '/post1').get()
         self.assertEqual(self.event.diff, post.data)
 
 class TestModifyPost(AndreasTestCaseWithKeyPair):
+    """
+    With a pre-existing post, try to create/modify/remove three different fields in ``data``.
+    Check that each field was processed correctly and that the fourth field wasn't affected.
+    """
     def setUp(self):
         super().setUp()
         
@@ -81,6 +84,9 @@ class TestModifyPost(AndreasTestCaseWithKeyPair):
         self.assertEqual(['Aaa', 'Bbb', 'Ccc'], self.post.data['tags'])
 
 class TestIncorrectSignature(AndreasTestCaseWithKeyPair):
+    """
+    Make sure that processing event will fail with an exception if the signature is corrupted.
+    """
     def setUp(self):
         super().setUp()
         
@@ -92,7 +98,7 @@ class TestIncorrectSignature(AndreasTestCaseWithKeyPair):
             'body': 'This event should be rejected.',
         }
         self.event.signatures = {
-            'abraham@aaa': sign_post(self.event, self.abraham_keypair).hex(),
+            'abraham@aaa': sign_post(self.event, self.abraham_keypair).hex().replace('a', 'b'),
         }
         self.event.save()
     
@@ -101,6 +107,9 @@ class TestIncorrectSignature(AndreasTestCaseWithKeyPair):
             process_event(self.event)
 
 class TestUnauthorizedAction(AndreasTestCaseWithKeyPair):
+    """
+    Make sure that you can't post an Abraham's post with Bernard's signature.
+    """
     def setUp(self):
         super().setUp()
         
