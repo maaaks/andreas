@@ -1,4 +1,4 @@
-from andreas.functions.process_events import UnauthorizedAction, process_event
+from andreas.functions.process_event import UnauthorizedAction, process_event
 from andreas.functions.verifying import sign_post
 from andreas.models.event import Event
 from andreas.models.post import Post
