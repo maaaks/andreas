@@ -40,6 +40,7 @@ def process_event(event: Event):
         verified_signatures: List[Dict] = []
         unverified_signatures: List[Dict] = []
         verified_users: Set[User] = set()
+        unverified_usernames: Set[str] = set()
         for user_string, signature_data in event.signatures.items():
             try:
                 keypair = verify_post(post, user_string, bytes.fromhex(signature_data))
@@ -47,13 +48,14 @@ def process_event(event: Event):
                 verified_users.add(keypair.user)
             except rsa.VerificationError:
                 unverified_signatures.append(dict(post=post, data=signature_data, user=user))
+                unverified_usernames.add(user_string)
         
         # Decide whose approvals we need for this post
         required_users = { post.user }
         
         # Make sure that we've got all signatures we need
         if not required_users <= verified_users:
-            raise UnauthorizedAction(required_users, verified_users)
+            raise UnauthorizedAction(required_users, verified_users, unverified_usernames)
         
         # Else, save the post and all the signatures
         post.save()
@@ -62,12 +64,19 @@ def process_event(event: Event):
             UnverifiedSignature.insert_many(unverified_signatures).execute()
 
 class UnauthorizedAction(Exception):
-    def __init__(self, required_users: Set[User], verified_users: Set[User]):
+    def __init__(self, required_users: Set[User], verified_users: Set[User], unverified_usernames: Set[str]):
         super().__init__()
         self.required_users: Set[User] = required_users
         self.verified_users: Set[User] = verified_users
+        self.unverified_usernames: Set[str] = unverified_usernames
     
     def __str__(self):
         missing_users = self.required_users - self.verified_users
-        missing_users_list = ", ".join(sorted(map(str, missing_users)))
-        return f'Missing authorization by {missing_users_list}.'
+        missing_users_list = ', '.join(sorted(map(str, missing_users)))
+        msg = f'Missing authorization by {missing_users_list}.'
+        
+        if self.unverified_usernames:
+            unverified_usernames_list = ', '.join(sorted(self.unverified_usernames))
+            msg += f'\n  Note: Failed to verify {unverified_usernames_list}.'
+        
+        return msg
