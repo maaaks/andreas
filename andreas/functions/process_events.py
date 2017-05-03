@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Set
 
 import rsa
 
@@ -12,6 +12,7 @@ from andreas.models.user import User
 
 def process_event(event: Event):
     server: Server = Server.get(Server.name == event.server)
+    user: User = User.from_string(event.user)
     
     # Create or update the post with data provided in this event
     if event.path:
@@ -19,10 +20,12 @@ def process_event(event: Event):
             post = (Post.select()
                 .where(Post.server == server)
                 .where(Post.path == event.path)
+                .where(Post.user == user)
                 .get())
         except Post.DoesNotExist:
             post = Post()
             post.server = Server.get(Server.name == event.server)
+            post.user = user
             post.path = event.path
         
         # Add/replace elements from the event,
@@ -33,25 +36,24 @@ def process_event(event: Event):
             else:
                 del post.data[key]
         
-        # The event has signatures, right?
-        if not event.signatures:
-            raise NoSignaturesProvided
-        
-        # Verify signatures
-        # If at least one signature is ok, consider the post verified
+        # Verify as many signatures as possible
         verified_signatures: List[Dict] = []
         unverified_signatures: List[Dict] = []
+        verified_users: Set[User] = set()
         for user_string, signature_data in event.signatures.items():
-            user = User.from_string(user_string, create=True)
             try:
-                keypair = verify_post(post, user, bytes.fromhex(signature_data))
+                keypair = verify_post(post, user_string, bytes.fromhex(signature_data))
                 verified_signatures.append(dict(post=post, data=signature_data, keypair=keypair))
+                verified_users.add(keypair.user)
             except rsa.VerificationError:
                 unverified_signatures.append(dict(post=post, data=signature_data, user=user))
         
-        # If we couldn't verify any signature at all, reject the post
-        if not verified_signatures:
-            raise CouldNotVerifySignatures
+        # Decide whose approvals we need for this post
+        required_users = { post.user }
+        
+        # Make sure that we've got all signatures we need
+        if not required_users <= verified_users:
+            raise UnauthorizedAction(required_users, verified_users)
         
         # Else, save the post and all the signatures
         post.save()
@@ -59,8 +61,13 @@ def process_event(event: Event):
         if unverified_signatures:
             UnverifiedSignature.insert_many(unverified_signatures).execute()
 
-class NoSignaturesProvided(Exception):
-    pass
-
-class CouldNotVerifySignatures(Exception):
-    pass
+class UnauthorizedAction(Exception):
+    def __init__(self, required_users: Set[User], verified_users: Set[User]):
+        super().__init__()
+        self.required_users: Set[User] = required_users
+        self.verified_users: Set[User] = verified_users
+    
+    def __str__(self):
+        missing_users = self.required_users - self.verified_users
+        missing_users_list = ", ".join(sorted(map(str, missing_users)))
+        return f'Missing authorization by {missing_users_list}.'

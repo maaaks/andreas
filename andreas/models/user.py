@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Union
 
 from peewee import CharField, DateTimeField, ForeignKeyField, PrimaryKeyField, fn
 
@@ -14,8 +15,11 @@ class User(Model):
     server: Server = ForeignKeyField(Server, on_update='cascade')
     """Server where this user is registered."""
     
-    name: str = CharField(50)
+    name: Union[CharField,str] = CharField(50)
     """User's identification on its server."""
+    
+    def __repr__(self):
+        return self.name + '@' + self.server.name
     
     @classmethod
     def triggers(cls):

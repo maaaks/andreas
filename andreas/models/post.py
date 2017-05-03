@@ -6,6 +6,7 @@ from playhouse.postgres_ext import BinaryJSONField
 
 from andreas.db.model import Model
 from andreas.models.server import Server
+from andreas.models.user import User
 
 
 class Post(Model):
@@ -20,6 +21,9 @@ class Post(Model):
     
     server: Server = ForeignKeyField(Server, on_update='cascade')
     """Server where the post was originally published and got its identification."""
+    
+    user: User = ForeignKeyField(User, on_update='cascade')
+    """Author of the entry."""
     
     path: str = TextField()
     """
