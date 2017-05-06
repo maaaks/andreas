@@ -1,28 +1,14 @@
 from datetime import datetime
 
-from peewee import BlobField, DateTimeField, ForeignKeyField, PrimaryKeyField, fn
+from peewee import BlobField, DateTimeField, ForeignKeyField, PrimaryKeyField, TextField, fn
 
 from andreas.db.model import Model
+from andreas.models.event import Event
 from andreas.models.keypair import KeyPair
 from andreas.models.post import Post
-from andreas.models.user import User
 
 
-class _AbstractSignature(Model):
-    """
-    Base class for :class:`Signature` and :class:`UnverifiedSignature`.
-    """
-    id: int = PrimaryKeyField()
-    created: datetime = DateTimeField(default=fn.now)
-    modified: datetime = DateTimeField(default=fn.now)
-    
-    post: Post = ForeignKeyField(Post)
-    """The post signed by this signature."""
-    
-    data: bytes = BlobField()
-    """The signature itself."""
-
-class Signature(_AbstractSignature):
+class Signature(Model):
     """
     Signature that verifies a post using a certain keypair.
     The user who made this signature can always be retrieved as ``keypair.user``.
@@ -30,20 +16,46 @@ class Signature(_AbstractSignature):
     class Meta:
         db_table = 'signature'
     
+    id: int = PrimaryKeyField()
+    created: datetime = DateTimeField(default=fn.now)
+    modified: datetime = DateTimeField(default=fn.now)
+    
     keypair: KeyPair = ForeignKeyField(KeyPair)
+    post: Post = ForeignKeyField(Post)
+    data: bytes = BlobField()
 
-class UnverifiedSignature(_AbstractSignature):
+class UnverifiedSignature(Model):
     """
     Signature that is supposed to verify a post but not yet checked.
     
-    We know which user supposedly should have a public key that would verify this sign
-    but we still have not found that public key. This means that either the sign is invalid
-    or that we are not yet aware of a recently added public key to the user's profile.
+    The worst case scenario here is that the signature is corrupted or just made by someone else,
+    and so we are destined to store this unverified signature forever without ability to confirm it.
     
-    If one day we will find a matching public key, we will remove the `UnverifiedSignature`
-    and save it as a normal :class:`Signature` instead.
+    But that's not the only case. Maybe we just use an outdated profile database
+    and therefore don't know yet that the user identified by `user_string` added a new public key.
+    After we will eventually update his profile, we will revalidate all signatures that have his username
+    and, probably, will be able to apply some of previously rejected events.
+    If it happens, we will delete the ``UnverifiedSignature`` and save the same data as a normal :class:`Signature`.
+    
+    It's important that there is a small possibility that user who currently has given username
+    has nothing to do with the user who signed the message long time ago.
+    (This depends on a server's policy about how nicknames are managed and how users are being deleted.)
+    That's why even if we have a user with matching the user name in our database,
+    we must not reference them from any messages until we will find the missing public key.
+    Only a public key can be a proof that certain user said certain things, not a username without a key.
+    
+    Unlike :class:`Signature`, this class can contain `NULL` in :data:`post` field
+    because the :data:`event` that contained an unverified signature
+    could easily end up being rejected and not produce a :class:`Post`.
     """
     class Meta:
         db_table = 'signature_unverified'
     
-    user: User = ForeignKeyField(User)
+    id: int = PrimaryKeyField()
+    created: datetime = DateTimeField(default=fn.now)
+    modified: datetime = DateTimeField(default=fn.now)
+    
+    event: Event = ForeignKeyField(Event)
+    user: str = TextField()
+    post: Post = ForeignKeyField(Post, null=True)
+    data: bytes = BlobField()

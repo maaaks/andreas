@@ -3,6 +3,7 @@ from andreas.functions.verifying import sign_post
 from andreas.models.event import Event
 from andreas.models.post import Post
 from andreas.models.server import Server
+from andreas.models.signature import UnverifiedSignature
 from andreas.tests.andreastestcase import AndreasTestCaseWithKeyPair
 
 
@@ -105,6 +106,46 @@ class TestIncorrectSignature(AndreasTestCaseWithKeyPair):
     def test_all(self):
         with self.assertRaisesRegex(UnauthorizedAction, 'Missing authorization by abraham@aaa.'):
             process_event(self.event)
+
+class TestPartiallyIncorrectSignature(AndreasTestCaseWithKeyPair):
+    """
+    Similar to :class:`TestIncorrectSignature` except the event has two signatures and only one is corrupted.
+    """
+    def setUp(self):
+        super().setUp()
+        
+        self.event = Event()
+        self.event.server = 'aaa'
+        self.event.user = 'abraham@aaa'
+        self.event.path = '/post1'
+        self.event.diff = {
+            'body': 'A normal post.',
+        }
+        self.event.signatures = {
+            'abraham@aaa': sign_post(self.event, self.abraham_keypair).hex(),
+            'bernard@aaa': sign_post(self.event, self.bernard_keypair).hex().replace('a', 'b'),
+        }
+        self.event.save()
+        
+        process_event(self.event)
+    
+    def test_post_created(self):
+        post: Post = Post.select().join(Server).where(Server.name == 'aaa', Post.path == '/post1').get()
+        
+        with self.subTest(what='post content'):
+            self.assertEqual(self.event.diff, post.data)
+        
+        with self.subTest(what='unverified signature'):
+            us_list = list(UnverifiedSignature.select().where(UnverifiedSignature.post == post))
+            self.assertEqual(len(us_list), 1)
+            us = us_list[0]
+
+            with self.subTest(field='event'):
+                self.assertEqual(us.event_id, self.event.id)
+            with self.subTest(field='user'):
+                self.assertEqual(us.user, 'bernard@aaa')
+            with self.subTest(field='data'):
+                self.assertEqual(us.data.hex(), self.event.signatures['bernard@aaa'])
 
 class TestUnauthorizedAction(AndreasTestCaseWithKeyPair):
     """

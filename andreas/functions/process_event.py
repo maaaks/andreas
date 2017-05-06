@@ -33,7 +33,7 @@ def process_event(event: Event):
         for key, value in event.diff.items():
             if value is not None:
                 post.data[key] = value
-            else:
+            elif key in post.data:
                 del post.data[key]
         
         # Verify as many signatures as possible
@@ -41,13 +41,14 @@ def process_event(event: Event):
         unverified_signatures: List[Dict] = []
         verified_users: Set[User] = set()
         unverified_usernames: Set[str] = set()
-        for user_string, signature_data in event.signatures.items():
+        for user_string, signature_hex in event.signatures.items():
+            signature_data = bytes.fromhex(signature_hex)
             try:
-                keypair = verify_post(post, user_string, bytes.fromhex(signature_data))
+                keypair = verify_post(post, user_string, signature_data)
                 verified_signatures.append(dict(post=post, data=signature_data, keypair=keypair))
                 verified_users.add(keypair.user)
             except rsa.VerificationError:
-                unverified_signatures.append(dict(post=post, data=signature_data, user=user))
+                unverified_signatures.append(dict(post=post, data=signature_data, user=user_string, event=event))
                 unverified_usernames.add(user_string)
         
         # Decide whose approvals we need for this post
@@ -57,7 +58,7 @@ def process_event(event: Event):
         if not required_users <= verified_users:
             raise UnauthorizedAction(required_users, verified_users, unverified_usernames)
         
-        # Else, save the post and all the signatures
+        # Else, save the post and all the signature
         post.save()
         Signature.insert_many(verified_signatures).execute()
         if unverified_signatures:

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Union
 
-from peewee import CharField, DateTimeField, ForeignKeyField, PrimaryKeyField, fn
+from peewee import DateTimeField, ForeignKeyField, PrimaryKeyField, TextField, fn
 
 from andreas.db.model import Model
 from andreas.models.server import Server
@@ -15,7 +15,7 @@ class User(Model):
     server: Server = ForeignKeyField(Server, on_update='cascade')
     """Server where this user is registered."""
     
-    name: Union[CharField,str] = CharField(50)
+    name: Union[TextField,str] = TextField()
     """User's identification on its server."""
     
     def __repr__(self):
