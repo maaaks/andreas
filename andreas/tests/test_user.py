@@ -4,8 +4,8 @@ from andreas.tests.andreastestcase import AndreasTestCase
 
 
 class TestUser(AndreasTestCase):
-    def setUp(self):
-        super().setUp()
+    def setUpSafe(self):
+        super().setUpSafe()
         
         self.server_a: Server = Server.create(name='aaa')
         self.server_b: Server = Server.create(name='bbb')

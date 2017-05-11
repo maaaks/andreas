@@ -11,8 +11,8 @@ class TestCreatePost(AndreasTestCaseWithKeyPair):
     """
     Create a simple post by a single event.
     """
-    def setUp(self):
-        super().setUp()
+    def setUpSafe(self):
+        super().setUpSafe()
         
         self.event = Event()
         self.event.server = 'aaa'
@@ -37,8 +37,8 @@ class TestModifyPost(AndreasTestCaseWithKeyPair):
     With a pre-existing post, try to create/modify/remove three different fields in ``data``.
     Check that each field was processed correctly and that the fourth field wasn't affected.
     """
-    def setUp(self):
-        super().setUp()
+    def setUpSafe(self):
+        super().setUpSafe()
         
         self.post = Post()
         self.post.server = self.server
@@ -88,8 +88,8 @@ class TestIncorrectSignature(AndreasTestCaseWithKeyPair):
     """
     Make sure that processing event will fail with an exception if the signature is corrupted.
     """
-    def setUp(self):
-        super().setUp()
+    def setUpSafe(self):
+        super().setUpSafe()
         
         self.event = Event()
         self.event.server = 'aaa'
@@ -111,8 +111,8 @@ class TestPartiallyIncorrectSignature(AndreasTestCaseWithKeyPair):
     """
     Similar to :class:`TestIncorrectSignature` except the event has two signatures and only one is corrupted.
     """
-    def setUp(self):
-        super().setUp()
+    def setUpSafe(self):
+        super().setUpSafe()
         
         self.event = Event()
         self.event.server = 'aaa'
@@ -151,8 +151,8 @@ class TestUnauthorizedAction(AndreasTestCaseWithKeyPair):
     """
     Make sure that you can't post an Abraham's post with Bernard's signature.
     """
-    def setUp(self):
-        super().setUp()
+    def setUpSafe(self):
+        super().setUpSafe()
         
         self.event = Event()
         self.event.server = 'aaa'

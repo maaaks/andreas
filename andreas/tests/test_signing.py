@@ -21,8 +21,8 @@ class TestSigning(AndreasTestCaseWithKeyPair):
         '6b29eda2c09930f0f57831de775684c07f08fdb2542ea4ca7f203788f018743c'
     )
     
-    def setUp(self):
-        super().setUp()
+    def setUpSafe(self):
+        super().setUpSafe()
         
         # A simple post
         self.post1 = Post()
