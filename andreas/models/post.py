@@ -33,7 +33,7 @@ class Post(Model):
     As long as we won't mess with it, it doesn't matter for us how exactly the server's routing is done.
     """
     
-    data: Dict[str,Any] = BinaryJSONField(default={}, constraints=[Check("jsonb_typeof(data) = 'object'")])
+    data: Dict[str,Any] = BinaryJSONField(default=lambda: {}, constraints=[Check("jsonb_typeof(data) = 'object'")])
     """
     The entire content of the post in JSON format.
     How some of the values are interpreted may depend on implementation.
