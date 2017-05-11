@@ -139,7 +139,7 @@ class TestPartiallyIncorrectSignature(AndreasTestCaseWithKeyPair):
             us_list = list(UnverifiedSignature.select().where(UnverifiedSignature.post == post))
             self.assertEqual(len(us_list), 1)
             us = us_list[0]
-
+            
             with self.subTest(field='event'):
                 self.assertEqual(us.event_id, self.event.id)
             with self.subTest(field='user'):
@@ -169,3 +169,39 @@ class TestUnauthorizedAction(AndreasTestCaseWithKeyPair):
     def test_all(self):
         with self.assertRaisesRegex(UnauthorizedAction, 'Missing authorization by abraham@aaa.'):
             process_event(self.event)
+
+class TestRevalidateWithNewKey(AndreasTestCaseWithKeyPair):
+    """
+    Create an event which is invalid at first but becomes valid after a new keypair appears.
+    """
+    def setUpSafe(self):
+        super().setUpSafe()
+        
+        self.event = Event()
+        self.event.server = 'aaa'
+        self.event.user = 'abraham@aaa'
+        self.event.path = '/post1'
+        self.event.diff = {
+            'body': 'Some text here.',
+        }
+        self.event.signatures = {
+            'abraham@aaa': sign_post(self.event, self.get_abraham2()).hex(),
+        }
+        self.event.save()
+    
+    def test_all(self):
+        with self.subTest(step='Event is not valid yet'):
+            with self.assertRaises(UnauthorizedAction):
+                process_event(self.event)
+        
+        with self.subTest(step='Post is not created'):
+            with self.assertRaises(Post.DoesNotExist):
+                Post.select().join(Server).where(Server.name == 'aaa', Post.path == '/post1').get()
+        
+        with self.subTest(step='Event becomes valid'):
+            self.load_abraham2()
+            process_event(self.event)
+        
+        with self.subTest(step='Post is created'):
+            post: Post = Post.select().join(Server).where(Server.name == 'aaa', Post.path == '/post1').get()
+            self.assertEqual(self.event.diff, post.data)

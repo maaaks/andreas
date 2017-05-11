@@ -57,3 +57,12 @@ class AndreasTestCaseWithKeyPair(AndreasTestCase):
         
         self.bernard: User = User.create(server=self.server, name='bernard')
         self.bernard_keypair = KeyPair.from_file(dirname(__file__) + '/keypairs/bernard.txt', user=self.bernard)
+    
+    @staticmethod
+    def get_abraham2() -> KeyPair:
+        """Loads Abraham's second key, returns it but does not save it."""
+        return KeyPair.from_file(dirname(__file__) + '/keypairs/abraham-2.txt')
+    
+    def load_abraham2(self):
+        """Loads Abraham's second key, saves it and stores as :data:`abraham_keypair`."""
+        self.abraham_keypair = KeyPair.from_file(dirname(__file__) + '/keypairs/abraham-2.txt', user=self.abraham)
