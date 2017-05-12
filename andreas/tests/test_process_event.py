@@ -1,9 +1,11 @@
+from typing import List
+
 from andreas.functions.process_event import UnauthorizedAction, process_event
 from andreas.functions.verifying import sign_post
 from andreas.models.event import Event
 from andreas.models.post import Post
 from andreas.models.server import Server
-from andreas.models.signature import UnverifiedSignature
+from andreas.models.signature import Signature, UnverifiedSignature
 from andreas.tests.andreastestcase import AndreasTestCaseWithKeyPair
 
 
@@ -162,13 +164,35 @@ class TestUnauthorizedAction(AndreasTestCaseWithKeyPair):
             'body': 'This event should be rejected.',
         }
         self.event.signatures = {
-            'bernard@aaa': sign_post(self.event, self.abraham_keypair).hex(),
+            'abraham@aaa': sign_post(self.event, self.abraham_keypair).hex().replace('a', 'b'),
+            'bernard@aaa': sign_post(self.event, self.bernard_keypair).hex(),
         }
         self.event.save()
     
     def test_all(self):
-        with self.assertRaisesRegex(UnauthorizedAction, 'Missing authorization by abraham@aaa.'):
-            process_event(self.event)
+        with self.subTest('Exception raised'):
+            with self.assertRaisesRegex(UnauthorizedAction, 'Missing authorization by abraham@aaa.'):
+                process_event(self.event)
+        
+        with self.subTest('Post not created'):
+            with self.assertRaises(Post.DoesNotExist):
+                Post.select().join(Server).where(Server.name == 'aaa', Post.path == '/post1').get()
+        
+        with self.subTest('Unverified signature saved'):
+            signatures: List[UnverifiedSignature] = list(UnverifiedSignature.select()
+                .where(UnverifiedSignature.event == self.event)
+                .where(UnverifiedSignature.user == 'abraham@aaa')
+                .where(UnverifiedSignature.post.is_null()))
+            self.assertEqual(len(signatures), 1)
+            self.assertEqual(self.event.signatures['abraham@aaa'], signatures[0].data.hex())
+        
+        with self.subTest('Verified signature saved'):
+            signatures: List[Signature] = list(Signature.select()
+                .where(Signature.event == self.event)
+                .where(Signature.keypair == self.bernard_keypair)
+                .where(Signature.post.is_null()))
+            self.assertEqual(len(signatures), 1)
+            self.assertEqual(self.event.signatures['bernard@aaa'], signatures[0].data.hex())
 
 class TestRevalidateWithNewKey(AndreasTestCaseWithKeyPair):
     """
@@ -190,18 +214,42 @@ class TestRevalidateWithNewKey(AndreasTestCaseWithKeyPair):
         self.event.save()
     
     def test_all(self):
-        with self.subTest(step='Event is not valid yet'):
+        with self.subTest('Event is not valid yet'):
             with self.assertRaises(UnauthorizedAction):
                 process_event(self.event)
         
-        with self.subTest(step='Post is not created'):
+        with self.subTest('Post not created'):
             with self.assertRaises(Post.DoesNotExist):
                 Post.select().join(Server).where(Server.name == 'aaa', Post.path == '/post1').get()
         
-        with self.subTest(step='Event becomes valid'):
+        with self.subTest('Unverified signature saved'):
+            signatures: List[UnverifiedSignature] = list(UnverifiedSignature.select()
+                .where(UnverifiedSignature.event == self.event)
+                .where(UnverifiedSignature.user == 'abraham@aaa')
+                .where(UnverifiedSignature.post.is_null()))
+            self.assertEqual(len(signatures), 1)
+            self.assertEqual(self.event.signatures['abraham@aaa'], signatures[0].data.hex())
+        
+        with self.subTest('Event becomes valid'):
             self.load_abraham2()
             process_event(self.event)
         
-        with self.subTest(step='Post is created'):
+        with self.subTest('Post created'):
             post: Post = Post.select().join(Server).where(Server.name == 'aaa', Post.path == '/post1').get()
             self.assertEqual(self.event.diff, post.data)
+        
+        with self.subTest('Unverified signature deleted'):
+            with self.assertRaises(UnverifiedSignature.DoesNotExist):
+                (UnverifiedSignature.select()
+                    .where(UnverifiedSignature.event == self.event)
+                    .where(UnverifiedSignature.user == 'abraham@aaa')
+                    .where(UnverifiedSignature.post.is_null())
+                    .get())
+        
+        with self.subTest('Verified signature saved'):
+            signatures: List[Signature] = list(Signature.select()
+                .where(Signature.event == self.event)
+                .where(Signature.keypair == self.abraham_keypair)
+                .where(Signature.post == post))
+            self.assertEqual(len(signatures), 1)
+            self.assertEqual(self.event.signatures['abraham@aaa'], signatures[0].data.hex())

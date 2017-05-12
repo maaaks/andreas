@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Union
 
 from peewee import BlobField, DateTimeField, ForeignKeyField, PrimaryKeyField, TextField, fn
 
@@ -12,6 +13,9 @@ class Signature(Model):
     """
     Signature that verifies a post using a certain keypair.
     The user who made this signature can always be retrieved as ``keypair.user``.
+    
+    The field :data:`post` can contain `NULL` if the :data:`event` was rejected,
+    for example when the provided signatures were valid but not authorized to perform the action.
     """
     class Meta:
         db_table = 'signature'
@@ -20,8 +24,9 @@ class Signature(Model):
     created: datetime = DateTimeField(default=fn.now)
     modified: datetime = DateTimeField(default=fn.now)
     
+    event: Event = ForeignKeyField(Event)
     keypair: KeyPair = ForeignKeyField(KeyPair)
-    post: Post = ForeignKeyField(Post)
+    post: Union[ForeignKeyField,Post] = ForeignKeyField(Post, null=True)
     data: bytes = BlobField()
 
 class UnverifiedSignature(Model):
@@ -44,7 +49,7 @@ class UnverifiedSignature(Model):
     we must not reference them from any messages until we will find the missing public key.
     Only a public key can be a proof that certain user said certain things, not a username without a key.
     
-    Unlike :class:`Signature`, this class can contain `NULL` in :data:`post` field
+    Just like :class:`Signature`, this class can contain `NULL` in :data:`post`
     because the :data:`event` that contained an unverified signature
     could easily end up being rejected and not produce a :class:`Post`.
     """
@@ -57,5 +62,5 @@ class UnverifiedSignature(Model):
     
     event: Event = ForeignKeyField(Event)
     user: str = TextField()
-    post: Post = ForeignKeyField(Post, null=True)
+    post: Union[ForeignKeyField,Post] = ForeignKeyField(Post, null=True)
     data: bytes = BlobField()

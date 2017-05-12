@@ -52,19 +52,3 @@ class Model(peewee.Model):
             val = getattr(newer_self, field_name)
             setattr(self, field_name, val)
         self._dirty.clear()
-    
-    @classmethod
-    def insert_many(cls, rows, validate_fields=True):
-        """
-        Saves multiple rows at once.
-        
-        If length of `rows` an be determined, checks whether it is zero.
-        If it's not, calls the original version of the method.
-        Else, returns an empty query which still has an `execute()` method just like a real `InsertQuery`.
-        """
-        if '__len__' in dir(rows) and len(rows):
-            return super().insert_many(rows, validate_fields)
-        else:
-            class DummyQuery:
-                def execute(self): pass
-            return DummyQuery()
