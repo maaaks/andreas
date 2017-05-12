@@ -36,11 +36,12 @@ def process_event(event: Event):
             elif key in post.data:
                 del post.data[key]
         
-        # Verify as many signatures as possible
         verified_signatures: List[Dict] = []
         unverified_signatures: List[Dict] = []
         verified_users: Set[User] = set()
         unverified_usernames: Set[str] = set()
+        
+        # Try to verify and save as many signatures as possible
         for user_string, signature_hex in event.signatures.items():
             signature_data = bytes.fromhex(signature_hex)
             try:
@@ -56,13 +57,21 @@ def process_event(event: Event):
         
         # Make sure that we've got all signatures we need
         if not required_users <= verified_users:
+            # Save all verified signatures, but set post=None because the Post isn't saved
+            verified_signatures = map(lambda d: dict(x for x in d.items() if x[0]!='post'), verified_signatures)
+            Signature.insert_many(verified_signatures).execute()
+            
+            # Do the same with unverified signatures
+            unverified_signatures = map(lambda d: dict(x for x in d.items() if x[0]!='post'), unverified_signatures)
+            UnverifiedSignature.insert_many(unverified_signatures).execute()
+            
+            # Exception indicates that we haven't saved the post itself, only the signatures
             raise UnauthorizedAction(required_users, verified_users, unverified_usernames)
         
         # Else, save the post and all the signature
         post.save()
         Signature.insert_many(verified_signatures).execute()
-        if unverified_signatures:
-            UnverifiedSignature.insert_many(unverified_signatures).execute()
+        UnverifiedSignature.insert_many(unverified_signatures).execute()
 
 class UnauthorizedAction(Exception):
     def __init__(self, required_users: Set[User], verified_users: Set[User], unverified_usernames: Set[str]):
