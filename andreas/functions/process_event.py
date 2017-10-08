@@ -1,3 +1,4 @@
+from itertools import chain
 from typing import Dict, List, Set
 
 import rsa
@@ -46,35 +47,43 @@ def process_event(event: Event):
             signature_data = bytes.fromhex(signature_hex)
             try:
                 keypair = verify_post(post, user_string, signature_data)
-                verified_signatures.append(dict(event=event, post=post, data=signature_data, keypair=keypair))
+                verified_signatures.append(dict(event=event, data=signature_data, keypair=keypair))
                 verified_users.add(keypair.user)
             except rsa.VerificationError:
-                unverified_signatures.append(dict(event=event, post=post, data=signature_data, user=user_string))
+                unverified_signatures.append(dict(event=event, data=signature_data, user=user_string))
                 unverified_usernames.add(user_string)
         
         # Decide whose approvals we need for this post
         required_users = { post.user }
         
-        # Make sure that we've got all signatures we need
-        if not required_users <= verified_users:
-            # Save all verified signatures, but set post=None because the Post isn't saved
-            if verified_signatures:
-                verified_signatures = map(lambda d: dict(x for x in d.items() if x[0]!='post'), verified_signatures)
-                Signature.insert_many(verified_signatures).execute()
+        # If we got all approvals, then we save post and fill post_id in all the signatures
+        success = False
+        if verified_users >= required_users:
+            success = True
             
-            # Do the same with unverified signatures
-            if unverified_signatures:
-                unverified_signatures = map(lambda d: dict(x for x in d.items() if x[0]!='post'), unverified_signatures)
-                UnverifiedSignature.insert_many(unverified_signatures).execute()
+            post.save()
+            for signature_data in chain(verified_signatures, unverified_signatures):
+                signature_data['post'] = post
             
-            # Exception indicates that we haven't saved the post itself, only the signatures
-            raise UnauthorizedAction(required_users, verified_users, unverified_usernames)
+            # If we have already analyzed this event in the past
+            # but had some user's signatures unverified and now some of them became verified,
+            # delete the old unverified instances
+            (UnverifiedSignature.delete()
+                .where(UnverifiedSignature.event == event)
+                .where(UnverifiedSignature.user << [repr(u) for u in verified_users])
+                .execute())
         
-        # Else, save the post and all the signature
-        post.save()
-        Signature.insert_many(verified_signatures).execute()
+        # Save the signatures
+        # We need them no matter what, even if we are going to raise the exception
+        if verified_signatures:
+            Signature.insert_many(verified_signatures).execute()
         if unverified_signatures:
             UnverifiedSignature.insert_many(unverified_signatures).execute()
+        
+        # Raise exception if post was not verified and therefore created/updated
+        if not success:
+            raise UnauthorizedAction(required_users, verified_users, unverified_usernames)
+
 
 class UnauthorizedAction(Exception):
     def __init__(self, required_users: Set[User], verified_users: Set[User], unverified_usernames: Set[str]):
