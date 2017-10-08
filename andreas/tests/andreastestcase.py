@@ -43,6 +43,7 @@ class AndreasTestCase(TestCase):
         self.transaction.rollback(begin=False)
         self.transaction_context.__exit__(None, None, None)
 
+
 class AndreasTestCaseWithKeyPair(AndreasTestCase):
     """
     Convenient basic class for test cases that need to work with users who have added valid keypairs.

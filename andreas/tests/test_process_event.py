@@ -34,6 +34,7 @@ class TestCreatePost(AndreasTestCaseWithKeyPair):
         post: Post = Post.select().join(Server).where(Server.name == 'aaa', Post.path == '/post1').get()
         self.assertEqual(self.event.diff, post.data)
 
+
 class TestModifyPost(AndreasTestCaseWithKeyPair):
     """
     With a pre-existing post, try to create/modify/remove three different fields in ``data``.
@@ -86,6 +87,7 @@ class TestModifyPost(AndreasTestCaseWithKeyPair):
     def test_tags_added(self):
         self.assertEqual(['Aaa', 'Bbb', 'Ccc'], self.post.data['tags'])
 
+
 class TestIncorrectSignature(AndreasTestCaseWithKeyPair):
     """
     Make sure that processing event will fail with an exception if the signature is corrupted.
@@ -108,6 +110,7 @@ class TestIncorrectSignature(AndreasTestCaseWithKeyPair):
     def test_all(self):
         with self.assertRaisesRegex(UnauthorizedAction, 'Missing authorization by abraham@aaa.'):
             process_event(self.event)
+
 
 class TestPartiallyIncorrectSignature(AndreasTestCaseWithKeyPair):
     """
@@ -148,6 +151,7 @@ class TestPartiallyIncorrectSignature(AndreasTestCaseWithKeyPair):
                 self.assertEqual(us.user, 'bernard@aaa')
             with self.subTest(field='data'):
                 self.assertEqual(us.data.hex(), self.event.signatures['bernard@aaa'])
+
 
 class TestUnauthorizedAction(AndreasTestCaseWithKeyPair):
     """
@@ -192,6 +196,7 @@ class TestUnauthorizedAction(AndreasTestCaseWithKeyPair):
             self.assertEqual(signatures[0].keypair, self.bernard_keypair)
             self.assertIsNone(signatures[0].post)
             self.assertEqual(self.event.signatures['bernard@aaa'], signatures[0].data.hex())
+
 
 class TestRevalidateWithNewKey(AndreasTestCaseWithKeyPair):
     """

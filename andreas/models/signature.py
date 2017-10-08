@@ -29,6 +29,7 @@ class Signature(Model):
     post: Union[ForeignKeyField,Post] = ForeignKeyField(Post, null=True)
     data: bytes = BlobField()
 
+
 class UnverifiedSignature(Model):
     """
     Signature that is supposed to verify a post but not yet checked.
