@@ -1,12 +1,22 @@
-from typing import List
+from typing import List, Union
 
 from andreas.functions.process_event import UnauthorizedAction, process_event
 from andreas.functions.verifying import sign_post
 from andreas.models.event import Event
+from andreas.models.keypair import KeyPair
 from andreas.models.post import Post
 from andreas.models.server import Server
 from andreas.models.signature import Signature, UnverifiedSignature
 from andreas.tests.andreastestcase import AndreasTestCaseWithKeyPair
+
+
+def sign_post_incorrectly(obj: Union[Post,Event], keypair: KeyPair, **kwargs) -> bytes:
+    """
+    Generates incorrect signature for the object.
+    It's like normal :func:`sign_post()`, but incorrect.
+    """
+    hex = sign_post(obj, keypair, **kwargs).hex().replace('a', 'b')
+    return bytes.fromhex(hex)
 
 
 class TestCreatePost(AndreasTestCaseWithKeyPair):
@@ -103,7 +113,7 @@ class TestIncorrectSignature(AndreasTestCaseWithKeyPair):
             'body': 'This event should be rejected.',
         }
         self.event.signatures = {
-            'abraham@aaa': sign_post(self.event, self.abraham_keypair).hex().replace('a', 'b'),
+            'abraham@aaa': sign_post_incorrectly(self.event, self.abraham_keypair).hex(),
         }
         self.event.save()
     
@@ -128,7 +138,7 @@ class TestPartiallyIncorrectSignature(AndreasTestCaseWithKeyPair):
         }
         self.event.signatures = {
             'abraham@aaa': sign_post(self.event, self.abraham_keypair).hex(),
-            'bernard@aaa': sign_post(self.event, self.bernard_keypair).hex().replace('a', 'b'),
+            'bernard@aaa': sign_post_incorrectly(self.event, self.bernard_keypair).hex(),
         }
         self.event.save()
         
@@ -168,7 +178,7 @@ class TestUnauthorizedAction(AndreasTestCaseWithKeyPair):
             'body': 'This event should be rejected.',
         }
         self.event.signatures = {
-            'abraham@aaa': sign_post(self.event, self.abraham_keypair).hex().replace('a', 'b'),
+            'abraham@aaa': sign_post_incorrectly(self.event, self.abraham_keypair).hex(),
             'bernard@aaa': sign_post(self.event, self.bernard_keypair).hex(),
         }
         self.event.save()
