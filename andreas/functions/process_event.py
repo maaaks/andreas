@@ -3,9 +3,11 @@ from typing import Dict, List, Set
 
 import rsa
 
+from andreas.functions.querying import get_post_by_identifier
 from andreas.functions.verifying import verify_post
 from andreas.models.event import Event
 from andreas.models.post import Post
+from andreas.models.relations import PostPostRelation
 from andreas.models.server import Server
 from andreas.models.signature import Signature, UnverifiedSignature
 from andreas.models.user import User
@@ -36,6 +38,11 @@ def process_event(event: Event):
                 post.data[key] = value
             elif key in post.data:
                 del post.data[key]
+        
+        # Save relations
+        if event.parent:
+            parent = get_post_by_identifier(event.parent)
+            PostPostRelation.create_after(post, source=post, type='comments', target=parent)
         
         verified_signatures: List[Dict] = []
         unverified_signatures: List[Dict] = []

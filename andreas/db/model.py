@@ -1,14 +1,14 @@
 from typing import Dict, Optional
 
-import peewee
+from playhouse import signals
 
 from andreas.db.database import db
 
 
-class Model(peewee.Model):
+class Model(signals.Model):
     class Meta:
         database = db
-        schema = "andreas"
+        schema = 'andreas'
     
     @classmethod
     def table(cls) -> str:
@@ -34,8 +34,8 @@ class Model(peewee.Model):
             
             # Create new triggers
             for when, code in cls.triggers().items():
-                trigger_name = when.replace(" ", "_")
-                code = code.rstrip("; \t\n\t")
+                trigger_name = when.replace(' ', '_')
+                code = code.rstrip('; \t\n\t')
                 db.execute_sql(
                     f'create or replace function {cls.table()}_{trigger_name}() returns trigger '
                     f'as $$ begin {code}; end $$ language plpgsql')
@@ -52,3 +52,29 @@ class Model(peewee.Model):
             val = getattr(newer_self, field_name)
             setattr(self, field_name, val)
         self._dirty.clear()
+    
+    def save_after(self, dependency: 'Model', *args, **kwargs):
+        """
+        Registers handler that will automatically save this model right after `dependency` will be saved.
+        This handler works only once and unregisters itself after finishing its work.
+        """
+        @signals.post_save(sender=type(dependency))
+        def _receiver(model_class, instance, created):
+            if instance is dependency:
+                self.save(*args, **kwargs)
+            signals.post_save.disconnect(_receiver)
+    
+    @classmethod
+    def create_after(cls, dependency, **kwargs):
+        """
+        Similar to original `create() <http://peewee.readthedocs.io/en/latest/peewee/api.html#Model.create>`
+        except it uses :meth:`save_after()`
+        instead of original `save() <http://peewee.readthedocs.io/en/latest/peewee/api.html#Model.save>`.
+        
+        Unlike original, this version does not return the model because it does not exist until dependency is saved.
+        """
+        @signals.post_save(sender=type(dependency))
+        def _receiver(model_class, instance, created):
+            if instance is dependency:
+                cls.create(**kwargs)
+            signals.post_save.disconnect(_receiver)

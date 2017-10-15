@@ -15,3 +15,8 @@ def get_post(server: Union[Server,str,int], path: str) -> Post:
         return Post.select(Post, Server).join(Server).where(Server.name == server).where(Post.path == path).get()
     else:
         return Post.get(Post.server == server, Post.path == path)
+
+
+def get_post_by_identifier(identifier: str) -> Post:
+    server, path = identifier.split('/')
+    return get_post(server, '/'+path)

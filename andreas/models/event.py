@@ -19,14 +19,13 @@ class Event(Model):
     """
     
     server: str = TextField()
-    """
-    Name of the server on which the post affected by this event is published.
-    """
+    """Name of the server on which the post affected by this event is published."""
     
     user: str = TextField()
-    """
-    Name of the user who should be the «owner» of the post.
-    """
+    """Name of the user who should be the «owner» of the post."""
+    
+    parent: str = TextField(null=True)
+    """Full identifier of parent post."""
     
     path: str = TextField(null=True)
     """
@@ -35,9 +34,7 @@ class Event(Model):
     """
     
     diff: Dict[str,Any] = BinaryJSONField(default={}, constraints=[Check("jsonb_typeof(diff) = 'object'")])
-    """
-    Changes which should be applied to the post.
-    """
+    """Changes which should be applied to the post."""
     
     signatures: Dict[str,str] = BinaryJSONField(default={}, constraints=[Check("jsonb_typeof(signatures) = 'object'")])
     """
