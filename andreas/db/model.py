@@ -1,6 +1,7 @@
 from typing import Dict, Optional
 
 from playhouse import signals
+from playhouse.signals import post_save
 
 from andreas.db.database import db
 
@@ -65,7 +66,7 @@ class Model(signals.Model):
             signals.post_save.disconnect(_receiver)
     
     @classmethod
-    def create_after(cls, dependency, **kwargs):
+    def create_after(cls, dependency: 'Model', **kwargs):
         """
         Similar to original `create() <http://peewee.readthedocs.io/en/latest/peewee/api.html#Model.create>`
         except it uses :meth:`save_after()`
@@ -73,8 +74,10 @@ class Model(signals.Model):
         
         Unlike original, this version does not return the model because it does not exist until dependency is saved.
         """
-        @signals.post_save(sender=type(dependency))
-        def _receiver(model_class, instance, created):
+        def receiver(model_class, instance, created):
             if instance is dependency:
                 cls.create(**kwargs)
-            signals.post_save.disconnect(_receiver)
+            signals.post_save.disconnect(receiver)
+        
+        receiver.__name__ = name=f'create after {id(dependency)}'
+        post_save.connect(receiver, sender=type(dependency))
