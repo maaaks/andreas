@@ -45,4 +45,4 @@ class Post(Model):
     def authors(self) -> Iterable[User]:
         for rel in self.incoming_relations_user_post:
             if rel.type == 'wrote':
-                yield rel.user
+                yield rel.source
