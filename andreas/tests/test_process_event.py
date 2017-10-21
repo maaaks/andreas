@@ -28,7 +28,7 @@ class TestCreatePost(AndreasTestCaseWithKeyPair):
         
         self.event = Event()
         self.event.server = 'aaa'
-        self.event.user = 'abraham@aaa'
+        self.event.authors = ['abraham@aaa']
         self.event.path = '/post1'
         self.event.diff = {
             'body': 'Hello, World!',
@@ -55,7 +55,7 @@ class TestModifyPost(AndreasTestCaseWithKeyPair):
         
         self.post = Post()
         self.post.server = self.server
-        self.post.user = self.abraham
+        self.post.authors = [self.abraham]
         self.post.path = '/post1'
         self.post.data = {
             'title': 'Hello',
@@ -66,7 +66,7 @@ class TestModifyPost(AndreasTestCaseWithKeyPair):
         
         event = Event()
         event.server = 'aaa'
-        event.user = 'abraham@aaa'
+        event.authors = ['abraham@aaa']
         event.path = '/post1'
         event.diff = {
             'title': 'Hello (updated)',
@@ -107,7 +107,7 @@ class TestIncorrectSignature(AndreasTestCaseWithKeyPair):
         
         self.event = Event()
         self.event.server = 'aaa'
-        self.event.user = 'abraham@aaa'
+        self.event.authors = ['abraham@aaa']
         self.event.path = '/post1'
         self.event.diff = {
             'body': 'This event should be rejected.',
@@ -131,7 +131,7 @@ class TestPartiallyIncorrectSignature(AndreasTestCaseWithKeyPair):
         
         self.event = Event()
         self.event.server = 'aaa'
-        self.event.user = 'abraham@aaa'
+        self.event.authors = ['abraham@aaa']
         self.event.path = '/post1'
         self.event.diff = {
             'body': 'A normal post.',
@@ -172,7 +172,7 @@ class TestUnauthorizedAction(AndreasTestCaseWithKeyPair):
         
         self.event = Event()
         self.event.server = 'aaa'
-        self.event.user = 'abraham@aaa'
+        self.event.authors = ['abraham@aaa']
         self.event.path = '/post1'
         self.event.diff = {
             'body': 'This event should be rejected.',
@@ -217,7 +217,7 @@ class TestRevalidateWithNewKey(AndreasTestCaseWithKeyPair):
         
         self.event = Event()
         self.event.server = 'aaa'
-        self.event.user = 'abraham@aaa'
+        self.event.authors = ['abraham@aaa']
         self.event.path = '/post1'
         self.event.diff = {
             'body': 'Some text here.',

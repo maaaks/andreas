@@ -1,8 +1,8 @@
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from peewee import Check, DateTimeField, ForeignKeyField, PrimaryKeyField, TextField, fn
-from playhouse.postgres_ext import BinaryJSONField
+from playhouse.postgres_ext import ArrayField, BinaryJSONField
 
 from andreas.db.model import Model
 from andreas.models.server import Server
@@ -21,7 +21,7 @@ class Event(Model):
     server: str = TextField()
     """Name of the server on which the post affected by this event is published."""
     
-    user: str = TextField()
+    authors: List[str] = ArrayField(TextField)
     """Name of the user who should be the «owner» of the post."""
     
     parent: str = TextField(null=True)

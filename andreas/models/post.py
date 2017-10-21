@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any, Dict, Iterable
 
 from peewee import Check, DateTimeField, ForeignKeyField, PrimaryKeyField, TextField, fn
 from playhouse.postgres_ext import BinaryJSONField
@@ -22,9 +22,6 @@ class Post(Model):
     server: Server = ForeignKeyField(Server, on_update='cascade')
     """Server where the post was originally published and got its identification."""
     
-    user: User = ForeignKeyField(User, on_update='cascade')
-    """Author of the entry."""
-    
     path: str = TextField()
     """
     Path to the query on the server, without leading slash.
@@ -44,3 +41,8 @@ class Post(Model):
         return {
             'before update': 'new.modified = now(); return new;',
         }
+    
+    def authors(self) -> Iterable[User]:
+        for rel in self.incoming_relations_user_post:
+            if rel.type == 'wrote':
+                yield rel.user

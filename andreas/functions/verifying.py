@@ -1,5 +1,5 @@
 import json
-from typing import Dict, Union
+from typing import Dict, Iterable, Union
 
 import rsa
 from peewee import Clause, SQL
@@ -11,7 +11,7 @@ from andreas.models.server import Server
 from andreas.models.user import User
 
 
-def _serialize(obj: Union[Post,Event], data: Dict = None) -> bytes:
+def _serialize(obj: Union[Post,Event], *, authors: Iterable[User] = None, data: Dict = None) -> bytes:
     """
     Converts given :class:`Post<andreas.models.post.Post>` or :class:`Event<andreas.models.event.Event>`
     into plain bytes so that it can be processed by ``rsa`` functions.
@@ -19,20 +19,26 @@ def _serialize(obj: Union[Post,Event], data: Dict = None) -> bytes:
     If optional argument `data` is given, it will be used instead of the object's own data attribute.
     """
     if isinstance(obj, Post):
-        return json.dumps({
-            'data': data or obj.data,
-            'user': str(obj.user),
-            'server': str(obj.server) if obj.server else None,
+        j = {
+            'server': str(obj.server),
             'path': obj.path,
-        }, sort_keys=True).encode()
+            'authors': authors if authors is not None
+                else list(str(u) for u in obj.authors()),
+            'data': data if data is not None
+                else obj.data,
+        }
     
     if isinstance(obj, Event):
-        return json.dumps({
-            'data': data or obj.diff,
-            'user': obj.user,
+        j = {
             'server': obj.server,
             'path': obj.path,
-        }, sort_keys=True).encode()
+            'authors': authors if authors is not None
+                else obj.authors,
+            'data': data if data is not None
+                else obj.diff,
+        }
+    
+    return json.dumps(j, sort_keys=True).encode()
 
 def sign_post(obj: Union[Post,Event], keypair: KeyPair, **kwargs) -> bytes:
     """

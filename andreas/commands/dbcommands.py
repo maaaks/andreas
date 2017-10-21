@@ -5,7 +5,7 @@ from andreas.db.model import Model
 from andreas.models.event import Event
 from andreas.models.keypair import KeyPair
 from andreas.models.post import Post
-from andreas.models.relations import PostPostRelation
+from andreas.models.relations import PostPostRelation, UserPostRelation
 from andreas.models.server import Server
 from andreas.models.signature import Signature, UnverifiedSignature
 from andreas.models.user import User
@@ -19,6 +19,7 @@ models: List[Type[Model]] = [
     Signature,
     UnverifiedSignature,
     User,
+    UserPostRelation,
 ]
 
 @db.atomic()
