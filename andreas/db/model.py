@@ -1,7 +1,6 @@
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Tuple, Type
 
 from playhouse import signals
-from playhouse.signals import post_save
 
 from andreas.db.database import db
 
@@ -10,6 +9,11 @@ class Model(signals.Model):
     class Meta:
         database = db
         schema = 'andreas'
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        self._models_to_save_after_myself: List[Tuple[Model,Dict]] = []
     
     @classmethod
     def table(cls) -> str:
@@ -54,30 +58,29 @@ class Model(signals.Model):
             setattr(self, field_name, val)
         self._dirty.clear()
     
-    def save_after(self, dependency: 'Model', *args, **kwargs):
+    def save_after(self, dependency: 'Model', **kwargs) -> None:
         """
-        Registers handler that will automatically save this model right after `dependency` will be saved.
+        Registers handler that will automatically save this model right as soon as `dependency` will be saved.
         This handler works only once and unregisters itself after finishing its work.
         """
-        @signals.post_save(sender=type(dependency))
-        def _receiver(model_class, instance, created):
-            if instance is dependency:
-                self.save(*args, **kwargs)
-            signals.post_save.disconnect(_receiver)
+        dependency._models_to_save_after_myself.append((self, kwargs))
     
     @classmethod
-    def create_after(cls, dependency: 'Model', **kwargs):
+    def create_after(cls, dependency: 'Model', **kwargs) -> 'Model':
         """
-        Similar to original `create() <http://peewee.readthedocs.io/en/latest/peewee/api.html#Model.create>`
-        except it uses :meth:`save_after()`
-        instead of original `save() <http://peewee.readthedocs.io/en/latest/peewee/api.html#Model.save>`.
-        
-        Unlike original, this version does not return the model because it does not exist until dependency is saved.
+        Creates instance and registers handler that will automatically save it as soon as `dependency` will be saved.
+        This handler works only once and unregisters itself after finishing its work.
         """
-        def receiver(model_class, instance, created):
-            if instance is dependency:
-                cls.create(**kwargs)
-            signals.post_save.disconnect(receiver)
-        
-        receiver.__name__ = name=f'create after {id(dependency)}'
-        post_save.connect(receiver, sender=type(dependency))
+        instance = cls(**kwargs)
+        dependency._models_to_save_after_myself.append((instance, {}))
+        return instance
+
+
+@signals.post_save()
+def post_save(model_class: Type[Model], instance: Model, created: bool):
+    """
+    After an object is saved, all other models that waited for it will be automatically saved, too.
+    """
+    for model, kwargs in instance._models_to_save_after_myself:
+        model.save(**kwargs)
+    instance._models_to_save_after_myself = []
