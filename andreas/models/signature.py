@@ -18,7 +18,7 @@ class Signature(Model):
     for example when the provided signatures were valid but not authorized to perform the action.
     """
     class Meta:
-        db_table = 'signature'
+        table_name = 'signature'
     
     id: int = PrimaryKeyField()
     created: datetime = DateTimeField(default=fn.now)
@@ -55,7 +55,7 @@ class UnverifiedSignature(Model):
     could easily end up being rejected and not produce a :class:`Post`.
     """
     class Meta:
-        db_table = 'signature_unverified'
+        table_name = 'signature_unverified'
     
     id: int = PrimaryKeyField()
     created: datetime = DateTimeField(default=fn.now)

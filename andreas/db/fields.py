@@ -1,6 +1,7 @@
 from math import ceil
 
-from peewee import BlobField, SQL
+import psycopg2
+from peewee import BlobField
 
 
 class BlobIntegerField(BlobField):
@@ -11,8 +12,8 @@ class BlobIntegerField(BlobField):
     
     def db_value(self, value: int):
         length = int(ceil(value.bit_length() / 8))
-        hex_value = value.to_bytes(length, 'big').hex()
-        return SQL(fr"E'\\x{hex_value}'")
+        value_bytes = value.to_bytes(length, 'big')
+        return psycopg2.Binary(value_bytes)
     
     def python_value(self, value: bytes) -> int:
         return int.from_bytes(value, 'big')

@@ -1,8 +1,7 @@
-from abc import ABC
 from os.path import dirname
 from unittest.case import TestCase
 
-from peewee import transaction
+from peewee import _transaction
 
 from andreas.db.database import db
 from andreas.models.keypair import KeyPair
@@ -28,7 +27,7 @@ class AndreasTestCase(TestCase):
         Unlike vanilla ``TestCase``, calls :meth:`tearDown()` if setup fails.
         """
         self.transaction_context = db.atomic()
-        self.transaction: transaction = self.transaction_context.__enter__()
+        self.transaction: _transaction = self.transaction_context.__enter__()
         
         try:
             self.setUpSafe()

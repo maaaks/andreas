@@ -9,7 +9,7 @@ from andreas.models.user import User
 
 class PostPostRelation(Model):
     class Meta:
-        db_table = 'relation_post_post'
+        table_name = 'relation_post_post'
     
     id: int = PrimaryKeyField()
     created: datetime = DateTimeField(default=fn.now)
@@ -28,7 +28,7 @@ class PostPostRelation(Model):
 
 class UserPostRelation(Model):
     class Meta:
-        db_table = 'relation_user_post'
+        table_name = 'relation_user_post'
     
     id: int = PrimaryKeyField()
     created: datetime = DateTimeField(default=fn.now)

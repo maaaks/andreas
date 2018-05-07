@@ -17,7 +17,7 @@ class Model(signals.Model):
     
     @classmethod
     def table(cls) -> str:
-        return f'{cls._meta.schema}.{cls._meta.db_table}'
+        return f'{cls._meta.schema}.{cls._meta.table_name}'
     
     @classmethod
     def triggers(cls) -> Optional[Dict[str,str]]:
@@ -52,7 +52,7 @@ class Model(signals.Model):
         """
         Updates all the fields from the database.
         """
-        newer_self = self.get(self._meta.primary_key == self._get_pk_value())
+        newer_self = self.get(self._pk_expr())
         for field_name in self._meta.fields.keys():
             val = getattr(newer_self, field_name)
             setattr(self, field_name, val)

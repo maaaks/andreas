@@ -24,7 +24,7 @@ models: List[Type[Model]] = [
 
 @db.atomic()
 def updatedb():
-    db.create_tables(models, safe=True)
+    db.create_tables(models)
 
 @db.atomic()
 def populatedb():

@@ -2,7 +2,7 @@ import json
 from typing import Dict, Iterable, Union
 
 import rsa
-from peewee import Clause, SQL
+from peewee import NodeList, SQL
 
 from andreas.models.event import Event
 from andreas.models.keypair import KeyPair
@@ -57,7 +57,7 @@ def verify_post(obj: Union[Post,Event], user_string: str, signature: bytes, **kw
     for keypair in (KeyPair.select(KeyPair, User, Server)
         .join(User)
         .join(Server)
-        .where(Clause(User.name, SQL("|| '@' ||"), Server.name) == user_string)
+        .where(NodeList((User.name, SQL("|| '@' ||"), Server.name)) == user_string)
     ):
         try:
             rsa.verify(data, signature, keypair.pubkey)
