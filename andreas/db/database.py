@@ -8,7 +8,7 @@ from andreas.app import app
 
 class Database(PostgresqlExtDatabase):
     def __init__(self, **kwargs):
-        kwargs["register_hstore"] = False
+        kwargs['register_hstore'] = False
         super().__init__(app.config.db.database, host=app.config.db.host, port=app.config.db.port,
             user=app.config.db.user, password=app.config.db.password, **kwargs)
     

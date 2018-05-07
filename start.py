@@ -8,13 +8,13 @@ from os.path import relpath, splitext
 from andreas.app import app
 from andreas.commands.dbcommands import dropdb, populatedb, resetdb, updatedb
 
-for dirpath, dirnames, filenames in walk(app.root_path + "/andreas"):
+for dirpath, dirnames, filenames in walk(app.root_path + '/andreas'):
     for filename in filenames:
-        if filename[-3:] == ".py" and filename != "__init__.py":
-            module_path = relpath(dirpath, app.root_path).replace("/", ".") + "." + splitext(filename)[0]
+        if filename[-3:] == '.py' and filename != '__init__.py':
+            module_path = relpath(dirpath, app.root_path).replace('/', '.') + '.' + splitext(filename)[0]
             import_module(module_path)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     if len(sys.argv) > 1:
         functions = [
             populatedb,

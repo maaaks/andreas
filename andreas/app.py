@@ -22,5 +22,5 @@ app = AndreasApp('AndreasApp')
 try:
     import local_config
 except ImportError:
-    print("Can't load local_config.py")
+    print('Can\'t load local_config.py')
     pass
