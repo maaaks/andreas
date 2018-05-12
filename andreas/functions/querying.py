@@ -1,6 +1,6 @@
 from typing import Iterable, List, Tuple, Type, Union
 
-from peewee import CTE, NodeList, SQL, SelectQuery
+from peewee import CTE, NodeList, SQL, SelectQuery, fn
 
 from andreas.models.post import Post
 from andreas.models.relations import PostPostRelation
@@ -25,7 +25,7 @@ def get_post_by_identifier(identifier: str) -> Post:
     return get_post(server, path)
 
 
-def get_comments_list(post: Union[Post,int]) -> List[Tuple[Post,int]]:
+def get_comments_list(post: Union[Post,int]) -> List[Tuple[int,Post]]:
     """
     Given a `post`, recursively loads all comments for it.
     The comments which are on a same level are shown in chronological order.
@@ -33,14 +33,14 @@ def get_comments_list(post: Union[Post,int]) -> List[Tuple[Post,int]]:
     
     The implementation uses `recursion <http://docs.peewee-orm.com/en/latest/peewee/query_examples.html#recursion>`_.
     
-    :return: A list of tuples. Each tuple contains a comment and its level in the discussion.
+    :return: A list of tuples. Each tuple contains a comment's level in discussion and the comment itself.
     """
     Comment: Type[Post] = Post.alias()
     Subcomment: Type[Post] = Post.alias()
     
     comments: CTE = (Comment
         .select(
-            NodeList((SQL('array['), Comment.created, SQL(']'))).alias('_breadcrumbs'),
+            NodeList((SQL('array['), fn.row(Comment.created, Comment.id), SQL(']'))).alias('_breadcrumbs'),
             Comment)
         .join(PostPostRelation, on=PostPostRelation.source)
         .where(PostPostRelation.type == 'comments')
@@ -49,7 +49,7 @@ def get_comments_list(post: Union[Post,int]) -> List[Tuple[Post,int]]:
     
     subcomments: SelectQuery = (Subcomment
         .select(
-            NodeList((comments.c._breadcrumbs, SQL('|| array['), Subcomment.created, SQL(']'))).alias('_breadcrumbs'),
+            NodeList((comments.c._breadcrumbs, SQL('||'), fn.row(Subcomment.created, Subcomment.id))),
             Subcomment)
         .join(PostPostRelation, on=((PostPostRelation.source == Subcomment.id) & (PostPostRelation.type == 'comments')))
         .join(comments, on=(PostPostRelation.target == comments.c.id)))
@@ -58,7 +58,7 @@ def get_comments_list(post: Union[Post,int]) -> List[Tuple[Post,int]]:
     query: Iterable[Post] = (cte
         .select_from(
             *(getattr(cte.c, column) for column in Post._meta.columns.keys()),
-            cte.c._breadcrumbs)
+            fn.array_length(cte.c._breadcrumbs, SQL('1')).alias('_level'))
         .order_by(cte.c._breadcrumbs))
     
-    return list((p, p._breadcrumbs) for p in query)
+    return list((p._level, p) for p in query)

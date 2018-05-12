@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Dict, Iterable
+from typing import Any, Dict, List
 
 from peewee import Check, DateTimeField, ForeignKeyField, PrimaryKeyField, TextField, fn
 from playhouse.postgres_ext import BinaryJSONField
@@ -42,7 +42,9 @@ class Post(Model):
             'before update': 'new.modified = now(); return new;',
         }
     
-    def authors(self) -> Iterable[User]:
+    def authors(self) -> List[User]:
+        authors = []
         for rel in self.incoming_relations_user_post:
             if rel.type == 'wrote':
-                yield rel.source
+                authors.append(rel.source)
+        return authors

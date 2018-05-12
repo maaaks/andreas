@@ -57,6 +57,11 @@ class AndreasTestCaseWithKeyPair(AndreasTestCase):
         
         self.bernard: User = User.create(server=self.server, name='bernard')
         self.bernard_keypair = KeyPair.from_file(dirname(__file__) + '/keypairs/bernard.txt', user=self.bernard)
+        
+        self.keypairs = {
+            self.abraham: self.abraham_keypair,
+            self.bernard: self.bernard_keypair,
+        }
     
     @staticmethod
     def get_abraham2() -> KeyPair:
